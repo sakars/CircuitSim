@@ -1,6 +1,7 @@
 #pragma once
 #include "circuit.hpp"
 #include "managers.hpp"
+#include <map>
 #include <memory>
 #include <queue>
 #include <stack>
@@ -53,6 +54,13 @@ private:
 
     std::tuple<std::vector<WireBridgeData>, std::vector<std::vector<std::vector<std::string>>>> generateWireBridgeData() const;
 
+    std::map<std::string, std::string> aliases;
+
+    /// @brief Resolves an alias to its target port. Allows for aliases of aliases.
+    /// @param port The port to resolve.
+    /// @return The target port.
+    std::string resolveAlias(std::string port) const;
+
 public:
     static std::shared_ptr<CircuitSchematic> create(std::string name)
     {
@@ -69,6 +77,7 @@ public:
     void addSubCircuit(std::string name, std::weak_ptr<CircuitSchematic> schematic);
     void addConnection(std::string from, std::string to);
     void addExposedPort(std::string port);
+    void addAlias(std::string target_port, std::string alias);
 
 private:
     std::shared_ptr<Circuit> earlyGenerate();

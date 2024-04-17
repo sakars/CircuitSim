@@ -70,7 +70,7 @@ void CircuitSchematic::addSubCircuit(std::string name, std::weak_ptr<CircuitSche
     // Check for circular dependencies
     auto l_schematic = schematic.lock();
     if (l_schematic->dependencies.find(this->name) != l_schematic->dependencies.end()) {
-        throw std::runtime_error("Circular dependency detected");
+        throw std::runtime_error(std::string("Circular dependency detected:") + this->name + " and " + l_schematic->name);
     }
     dependencies.insert(l_schematic->name);
 
@@ -80,6 +80,24 @@ void CircuitSchematic::addSubCircuit(std::string name, std::weak_ptr<CircuitSche
     }
 
     sub_circuits.push_back(std::make_tuple(name, schematic));
+}
+
+void CircuitSchematic::addAlias(std::string target_port, std::string alias)
+{
+    aliases[alias] = target_port;
+}
+
+std::string CircuitSchematic::resolveAlias(std::string port) const
+{
+    std::set<std::string> visited;
+    while (aliases.find(port) != aliases.end()) {
+        if (visited.find(port) != visited.end()) {
+            throw std::runtime_error("Circular alias detected");
+        }
+        visited.insert(port);
+        port = aliases.at(port);
+    }
+    return port;
 }
 
 std::shared_ptr<Circuit> CircuitSchematic::earlyGenerate()
@@ -139,10 +157,22 @@ void CircuitSchematic::lateGenerate(std::shared_ptr<Circuit> circuit, Managers& 
         }
     }
 
+    // Add aliases to access map
+    for (const auto& [alias, target] : aliases) {
+        std::string base_target = resolveAlias(target);
+        if (circuit->bool_storage_access_map.find(base_target) == circuit->bool_storage_access_map.end()) {
+            throw std::runtime_error(std::string("Alias target ") + base_target + " not found");
+        }
+        circuit->bool_storage_access_map[alias] = circuit->bool_storage_access_map[base_target];
+    }
+
     // Add connections
     for (const auto& [from, to] : connections) {
         if (circuit->bool_storage_access_map.find(from) == circuit->bool_storage_access_map.end() || circuit->bool_storage_access_map.find(to) == circuit->bool_storage_access_map.end()) {
-            throw std::runtime_error("Connection ports not found");
+            if (circuit->bool_storage_access_map.find(from) == circuit->bool_storage_access_map.end()) {
+                throw std::runtime_error(std::string("Connection port ") + from + " not found");
+            }
+            throw std::runtime_error(std::string("Connection port ") + to + " not found");
         }
         managers.socketController->addSocket(circuit->bool_storage_access_map[from], circuit->bool_storage_access_map[to]);
     }
@@ -150,7 +180,7 @@ void CircuitSchematic::lateGenerate(std::shared_ptr<Circuit> circuit, Managers& 
     // Add exposed ports
     for (const auto& exposed_port : exposed_ports) {
         if (circuit->bool_storage_access_map.find(exposed_port) == circuit->bool_storage_access_map.end()) {
-            throw std::runtime_error("Exposed port not found");
+            throw std::runtime_error(std::string("Exposed port ") + exposed_port + " not found");
         }
         // Add the exposed port to the map of exposed ports
         circuit->exposed_ports[exposed_port] = circuit->bool_storage_access_map[exposed_port];
