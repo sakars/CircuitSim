@@ -30,8 +30,9 @@ void BoolStorageAccessor::set(BoolStorage value)
         //           << shifted << "\n";
         *buffer &= mask;
         *buffer |= shifted;
-        // std::cout << "Buffer:\n"
-        //           << *buffer_lock << "\n";
+        // buffer->markDirty();
+        //  std::cout << "Buffer:\n"
+        //            << *buffer_lock << "\n";
         return;
     }
     throw std::runtime_error("BufferAccessor dereference failed");
@@ -43,6 +44,7 @@ void BoolStorageAccessor::clear()
     if (buffer) {
         const auto mask = ((ONES << socket_size).flip() << bit_offset).flip();
         *buffer &= mask;
+        // buffer->markDirty();
         return;
     }
     throw std::runtime_error("BufferAccessor dereference failed");
@@ -54,6 +56,7 @@ void BoolStorageAccessor::add(BoolStorage value)
     if (buffer) {
         const auto shifted = (value & (ONES >> (STORAGE_SIZE - socket_size))) << bit_offset;
         *buffer |= shifted;
+        // buffer->markDirty();
         return;
     }
     throw std::runtime_error("BufferAccessor dereference failed");
@@ -65,6 +68,7 @@ void BoolStorageAccessor::multiply(BoolStorage value)
     if (buffer) {
         const auto shifted = (value & (ONES >> (STORAGE_SIZE - socket_size))) << bit_offset;
         *buffer &= shifted;
+        // buffer->markDirty();
         return;
     }
     throw std::runtime_error("BufferAccessor dereference failed");

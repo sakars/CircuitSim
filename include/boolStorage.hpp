@@ -6,8 +6,141 @@
 
 constexpr size_t STORAGE_SIZE = 64;
 
-/// the smallest unit of data a socket can carry
 using BoolStorage = std::bitset<STORAGE_SIZE>;
+
+/// the smallest unit of data a socket can carry
+// using BoolStorage = std::bitset<STORAGE_SIZE>;
+class MarkableBoolStorage {
+    std::bitset<STORAGE_SIZE> data;
+    bool dirty = false;
+
+public:
+    MarkableBoolStorage(const std::bitset<STORAGE_SIZE>& data)
+        : data(data)
+        , dirty(false)
+    {
+    }
+    MarkableBoolStorage(std::bitset<STORAGE_SIZE>&& data)
+        : data(data)
+        , dirty(false)
+    {
+    }
+    MarkableBoolStorage(size_t data)
+        : data(data)
+        , dirty(false)
+    {
+    }
+    MarkableBoolStorage()
+        : data(0)
+        , dirty(false)
+    {
+    }
+    MarkableBoolStorage(const MarkableBoolStorage& other)
+        : data(other.data)
+        , dirty(other.dirty)
+    {
+    }
+    MarkableBoolStorage& operator=(const MarkableBoolStorage& other)
+    {
+        data = other.data;
+        dirty = other.dirty;
+        return *this;
+    }
+    MarkableBoolStorage& operator=(MarkableBoolStorage&& other)
+    {
+        data = other.data;
+        dirty = other.dirty;
+        return *this;
+    }
+    MarkableBoolStorage(MarkableBoolStorage&& other)
+        : data(other.data)
+        , dirty(other.dirty)
+    {
+    }
+    MarkableBoolStorage operator&(const MarkableBoolStorage& other) const { return MarkableBoolStorage(std::move(data & other.data)); }
+    MarkableBoolStorage operator|(const MarkableBoolStorage& other) const { return MarkableBoolStorage(data | other.data); }
+    MarkableBoolStorage operator^(const MarkableBoolStorage& other) const { return MarkableBoolStorage(data ^ other.data); }
+    MarkableBoolStorage operator~() const { return MarkableBoolStorage(~data); }
+    MarkableBoolStorage& operator&=(const MarkableBoolStorage& other)
+    {
+        data &= other.data;
+        return *this;
+    }
+    MarkableBoolStorage& operator|=(const MarkableBoolStorage& other)
+    {
+        data |= other.data;
+        return *this;
+    }
+    MarkableBoolStorage& operator^=(const MarkableBoolStorage& other)
+    {
+        data ^= other.data;
+        return *this;
+    }
+    bool operator==(const MarkableBoolStorage& other) const { return data == other.data; }
+    bool operator!=(const MarkableBoolStorage& other) const { return data != other.data; }
+    MarkableBoolStorage& reset()
+    {
+        data.reset();
+        return *this;
+    }
+    MarkableBoolStorage operator<<(size_t shift) const { return MarkableBoolStorage(data << shift); }
+    MarkableBoolStorage operator>>(size_t shift) const { return MarkableBoolStorage(data >> shift); }
+
+    unsigned long to_ulong() const
+    {
+        return data.to_ulong();
+    }
+    unsigned long long to_ullong() const
+    {
+        return data.to_ullong();
+    }
+
+    bool operator[](size_t index) const { return data[index]; }
+    bool test(size_t index) const { return data.test(index); }
+    bool any() const { return data.any(); }
+    bool none() const { return data.none(); }
+    bool all() const { return data.all(); }
+    size_t count() const { return data.count(); }
+    size_t size() const { return data.size(); }
+    MarkableBoolStorage& set(size_t index, bool value)
+    {
+        data.set(index, value);
+        return *this;
+    }
+    MarkableBoolStorage& set()
+    {
+        data.set();
+        return *this;
+    }
+    MarkableBoolStorage& reset(size_t index)
+    {
+        data.reset(index);
+        return *this;
+    }
+
+    MarkableBoolStorage& flip()
+    {
+        data.flip();
+        return *this;
+    }
+    MarkableBoolStorage& flip(size_t index)
+    {
+        data.flip(index);
+        return *this;
+    }
+    void markDirty()
+    {
+        dirty = true;
+    }
+    void markClean()
+    {
+        dirty = false;
+    }
+    bool isDirty() const
+    {
+        return dirty;
+    }
+};
 
 const auto ONES = BoolStorage(0).flip();
 

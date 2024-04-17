@@ -2,11 +2,6 @@
 
 #include "boolStorage.hpp"
 
-TEST_CASE("BoolStorage is a std::bitset", "[boolStorage]")
-{
-    REQUIRE(sizeof(BoolStorage) == sizeof(std::bitset<STORAGE_SIZE>));
-}
-
 TEST_CASE("BoolStorage is mutable", "[boolStorage]")
 {
     BoolStorage bs;
